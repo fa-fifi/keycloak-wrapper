@@ -4,8 +4,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "fa-fifi"
     commit-message:
       prefix: "⬆️ "
 
@@ -14,8 +12,6 @@ updates:
     schedule:
       interval: "weekly"
       day: "sunday"
-    reviewers:
-      - "fa-fifi"
     commit-message:
       prefix: "⬆️ "
     versioning-strategy: increase
