@@ -4,11 +4,34 @@ part of '../keycloak_wrapper.dart';
 ///
 /// It uses [KeycloakConfig] for configuration settings and relies on flutter_appauth package for OAuth2 authorization.
 class KeycloakWrapper {
-  factory KeycloakWrapper() => _instance ??= KeycloakWrapper._();
+  final FlutterAppAuth _appAuth;
+  final FlutterSecureStorage _secureStorage;
+  final HttpClient _httpClient;
+  final KeycloakConfig _keycloakConfig;
 
-  KeycloakWrapper._();
+  static KeycloakWrapper? _instance;
 
-  static KeycloakWrapper? _instance = KeycloakWrapper._();
+  factory KeycloakWrapper({
+    FlutterAppAuth? appAuth,
+    FlutterSecureStorage? secureStorage,
+    HttpClient? httpClient,
+    required KeycloakConfig keycloakConfig,
+  }) {
+    _instance ??= KeycloakWrapper._(
+      appAuth ?? const FlutterAppAuth(),
+      secureStorage ?? const FlutterSecureStorage(),
+      httpClient ?? HttpClient(),
+      keycloakConfig,
+    );
+    return _instance!;
+  }
+
+  KeycloakWrapper._(
+    this._appAuth,
+    this._secureStorage,
+    this._httpClient,
+    this._keycloakConfig,
+  );
 
   late final _streamController = StreamController<bool>();
 
@@ -69,16 +92,16 @@ class KeycloakWrapper {
         debugPrint('No refresh token found.');
         _streamController.add(false);
       } else {
-        await KeycloakConfig.instance.initialize();
+        await _keycloakConfig.initialize();
 
         final isConnected = await hasNetwork();
 
         if (isConnected) {
           tokenResponse = await _appAuth.token(
             TokenRequest(
-              KeycloakConfig.instance.clientId,
-              KeycloakConfig.instance.redirectUri,
-              issuer: KeycloakConfig.instance.issuer,
+              _keycloakConfig.clientId,
+              _keycloakConfig.redirectUri,
+              issuer: _keycloakConfig.issuer,
               refreshToken: securedRefreshToken,
               allowInsecureConnections: true,
             ),
@@ -149,8 +172,8 @@ class KeycloakWrapper {
     try {
       final request = EndSessionRequest(
         idTokenHint: idToken,
-        issuer: KeycloakConfig.instance.issuer,
-        postLogoutRedirectUrl: KeycloakConfig.instance.redirectUri,
+        issuer: _keycloakConfig.issuer,
+        postLogoutRedirectUrl: _keycloakConfig.redirectUri,
         allowInsecureConnections: true,
       );
 
@@ -169,15 +192,14 @@ class KeycloakWrapper {
     _assert();
     try {
       final url = Uri.parse(
-        '${KeycloakConfig.instance.issuer}/protocol/openid-connect/userinfo',
+        '${_keycloakConfig.issuer}/protocol/openid-connect/userinfo',
       );
-      final client = HttpClient();
-      final request = await client.getUrl(url)
+      final request = await _httpClient.getUrl(url)
         ..headers.add(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
       final response = await request.close();
       final responseBody = await response.transform(utf8.decoder).join();
 
-      client.close();
+      _httpClient.close();
       return jsonDecode(responseBody) as Map<String, dynamic>?;
     } catch (e, s) {
       onError(e, s);

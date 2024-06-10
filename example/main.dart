@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 
-final keycloakWrapper = KeycloakWrapper();
+final config = KeycloakConfig(
+  bundleIdentifier: '<bundle_identifier>',
+  clientId: '<client_id>',
+  frontendUrl: '<frontend_url>',
+  realm: '<realm>',
+);
+final keycloakWrapper = KeycloakWrapper(keycloakConfig: config);
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
@@ -39,13 +45,6 @@ class LoginScreen extends StatelessWidget {
 
   // Login using the given configuration.
   Future<bool> login() async {
-    final config = KeycloakConfig(
-      bundleIdentifier: '<bundle_identifier>',
-      clientId: '<client_id>',
-      frontendUrl: '<frontend_url>',
-      realm: '<realm>',
-    );
-
     // Check if user has successfully logged in.
     final isLoggedIn = await keycloakWrapper.login(config);
 
